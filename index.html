@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nexus: The Awakening</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; color: white; font-family: 'Courier New', monospace; }
+        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        /* The Panning Office */
+        #office {
+            width: 150%; height: 100%;
+            background: linear-gradient(90deg, #111 0%, #222 50%, #111 100%);
+            position: absolute; left: -25%; 
+            transition: transform 0.1s ease-out; /* Smooth 2026 panning effect */
+            display: flex; justify-content: space-around; align-items: center;
+        }
+
+        .door { width: 100px; height: 80%; background: #050505; border: 2px solid #333; position: relative; }
+        .door.closed { background: cyan; box-shadow: 0 0 20px cyan; }
+
+        /* Modern UI */
+        #ui-overlay { position: absolute; top: 20px; left: 20px; pointer-events: none; }
+        .button { 
+            position: absolute; bottom: 20px; padding: 15px 30px; 
+            background: #440000; border: 2px solid red; cursor: pointer; pointer-events: all;
+        }
+        #cam-btn { left: 50%; transform: translateX(-50%); background: #222; border-color: #555; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="office">
+            <div id="left-door" class="door"></div>
+            <div id="center-room">
+                <h1 style="color: #444; text-shadow: 2px 2px #000;">NEXUS SECURITY</h1>
+            </div>
+            <div id="right-door" class="door"></div>
+        </div>
+
+        <div id="ui-overlay">
+            <h2 id="power">POWER: 100%</h2>
+        </div>
+
+        <div id="left-btn" class="button" style="left: 10%;">L DOOR</div>
+        <div id="right-btn" class="button" style="right: 10%;">R DOOR</div>
+        <div id="cam-btn" class="button">MONITOR</div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

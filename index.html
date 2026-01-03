@@ -1,51 +1,144 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Nexus: The Awakening</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FNAF Web Clone 2026</title>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; color: white; font-family: 'Courier New', monospace; }
-        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        body { margin: 0; background: black; color: white; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        #view { width: 800px; height: 600px; border: 5px solid #333; position: relative; background: #111; }
         
-        /* The Panning Office */
-        #office {
-            width: 150%; height: 100%;
-            background: linear-gradient(90deg, #111 0%, #222 50%, #111 100%);
-            position: absolute; left: -25%; 
-            transition: transform 0.1s ease-out; /* Smooth 2026 panning effect */
-            display: flex; justify-content: space-around; align-items: center;
-        }
-
-        .door { width: 100px; height: 80%; background: #050505; border: 2px solid #333; position: relative; }
-        .door.closed { background: cyan; box-shadow: 0 0 20px cyan; }
-
-        /* Modern UI */
-        #ui-overlay { position: absolute; top: 20px; left: 20px; pointer-events: none; }
-        .button { 
-            position: absolute; bottom: 20px; padding: 15px 30px; 
-            background: #440000; border: 2px solid red; cursor: pointer; pointer-events: all;
-        }
-        #cam-btn { left: 50%; transform: translateX(-50%); background: #222; border-color: #555; }
+        /* UI Elements */
+        #ui { position: absolute; top: 10px; left: 10px; z-index: 10; pointer-events: none; }
+        .btn { pointer-events: all; cursor: pointer; background: #444; color: white; border: 2px solid white; padding: 10px; }
+        .btn:hover { background: #666; }
+        
+        #camera-feed { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.8); z-index: 5; text-align: center; }
+        #static { position: absolute; inset: 0; background: url('media.giphy.com'); opacity: 0.1; pointer-events: none; }
+        #animatronic { width: 100px; height: 150px; background: red; position: absolute; bottom: 50px; left: 350px; display: none; }
+        
+        #jumpscare { display: none; position: fixed; inset: 0; background: red; z-index: 100; align-items: center; justify-content: center; font-size: 50px; color: black; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="office">
-            <div id="left-door" class="door"></div>
-            <div id="center-room">
-                <h1 style="color: #444; text-shadow: 2px 2px #000;">NEXUS SECURITY</h1>
+
+<div id="game-container">
+    <div id="view">
+        <div id="ui">
+            <div>TIME: <span id="clock">12</span> AM</div>
+            <div>POWER: <span id="power">100</span>%</div>
+            <br>
+            <button class="btn" onclick="toggleDoor()">TOGGLE DOOR</button>
+            <button class="btn" onclick="toggleCameras()">CAMERAS</button>
+        </div>
+
+        <!-- Office View -->
+        <div id="office-content" style="padding-top: 200px; text-align: center;">
+            <h2 id="door-status">DOOR IS OPEN</h2>
+            <p>(Watch the cameras! If the red block is at CAM 3, close the door!)</p>
+        </div>
+
+        <!-- Camera System -->
+        <div id="camera-feed">
+            <h1 id="cam-name">CAM 1: STAGE</h1>
+            <div id="camera-buttons">
+                <button class="btn" onclick="changeCam(1)">CAM 1</button>
+                <button class="btn" onclick="changeCam(2)">CAM 2</button>
+                <button class="btn" onclick="changeCam(3)">CAM 3</button>
             </div>
-            <div id="right-door" class="door"></div>
+            <div id="animatronic"></div>
+            <div id="static"></div>
         </div>
-
-        <div id="ui-overlay">
-            <h2 id="power">POWER: 100%</h2>
-        </div>
-
-        <div id="left-btn" class="button" style="left: 10%;">L DOOR</div>
-        <div id="right-btn" class="button" style="right: 10%;">R DOOR</div>
-        <div id="cam-btn" class="button">MONITOR</div>
     </div>
+</div>
 
-    <script src="game.js"></script>
+<div id="jumpscare">IT'S ME. GAME OVER.</div>
+
+<script>
+    // Game State
+    let power = 100;
+    let time = 0; // 0 = 12AM, 6 = 6AM
+    let doorClosed = false;
+    let camsOpen = false;
+    let currentCam = 1;
+    let enemyPos = 1; // 1: Stage, 2: Hallway, 3: Outside Door, 4: Office (Jumpscare)
+
+    // Elements
+    const powerEl = document.getElementById('power');
+    const clockEl = document.getElementById('clock');
+    const doorStatus = document.getElementById('door-status');
+    const camFeed = document.getElementById('camera-feed');
+    const camName = document.getElementById('cam-name');
+    const enemyEl = document.getElementById('animatronic');
+    const jumpScareEl = document.getElementById('jumpscare');
+
+    // Power Drain Logic
+    setInterval(() => {
+        let drain = 0.1;
+        if (doorClosed) drain += 0.3;
+        if (camsOpen) drain += 0.2;
+        power -= drain;
+        powerEl.innerText = Math.floor(power);
+        if (power <= 0) gameOver("Power Outage...");
+    }, 1000);
+
+    // Time Progression (1 min = 1 hour)
+    setInterval(() => {
+        time++;
+        clockEl.innerText = time === 0 ? 12 : time;
+        if (time >= 6) alert("6 AM! YOU WIN!");
+    }, 60000);
+
+    // AI Logic: Movement opportunities every 5 seconds
+    setInterval(() => {
+        if (Math.random() > 0.5) { // 50% chance to move
+            enemyPos++;
+            console.log("Enemy moved to: " + enemyPos);
+            
+            if (enemyPos === 4) { // Final move
+                if (doorClosed) {
+                    enemyPos = 1; // Reset to stage if door blocked
+                    console.log("Door blocked him! Resetting.");
+                } else {
+                    gameOver();
+                }
+            }
+        }
+        updateVisuals();
+    }, 5000);
+
+    function toggleDoor() {
+        doorClosed = !doorClosed;
+        doorStatus.innerText = doorClosed ? "DOOR IS CLOSED" : "DOOR IS OPEN";
+    }
+
+    function toggleCameras() {
+        camsOpen = !camsOpen;
+        camFeed.style.display = camsOpen ? 'block' : 'none';
+        updateVisuals();
+    }
+
+    function changeCam(id) {
+        currentCam = id;
+        const names = {1: "STAGE", 2: "HALLWAY", 3: "OUTSIDE DOOR"};
+        camName.innerText = `CAM ${id}: ${names[id]}`;
+        updateVisuals();
+    }
+
+    function updateVisuals() {
+        // Show enemy only if they are in the room currently being viewed
+        if (camsOpen && enemyPos === currentCam) {
+            enemyEl.style.display = 'block';
+        } else {
+            enemyEl.style.display = 'none';
+        }
+    }
+
+    function gameOver(msg = "JUMPSCARE!") {
+        jumpScareEl.style.display = 'flex';
+        jumpScareEl.innerText = msg;
+    }
+</script>
 </body>
 </html>
